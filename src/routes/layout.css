@@ -136,7 +136,7 @@
     background: white;
   }
 
-  * {
+  .preview-container {
     overflow: visible !important;
   }
 

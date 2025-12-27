@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { gridStore } from '$lib/stores/grid';
-	import type { GridImage } from '$lib/stores/grid';
-	import { RotateCw, X } from '@lucide/svelte';
-	import Button from '$lib/components/ui/button/button.svelte';
+	import { gridStore } from "$lib/stores/grid";
+	import type { GridImage } from "$lib/stores/grid";
+	import { RotateCw, X } from "@lucide/svelte";
+	import Button from "$lib/components/ui/button/button.svelte";
 
 	interface Props {
 		image: GridImage;
@@ -26,8 +26,8 @@
 		startPosX = image.objectPosition[0];
 		startPosY = image.objectPosition[1];
 
-		window.addEventListener('mousemove', handleMouseMove);
-		window.addEventListener('mouseup', handleMouseUp);
+		window.addEventListener("mousemove", handleMouseMove);
+		window.addEventListener("mouseup", handleMouseUp);
 	}
 
 	function handleMouseMove(e: MouseEvent) {
@@ -37,31 +37,37 @@
 		const deltaY = e.clientY - startY;
 
 		const sensitivityFactor = 0.5;
-		const newX = Math.max(0, Math.min(100, startPosX + deltaX * sensitivityFactor));
-		const newY = Math.max(0, Math.min(100, startPosY + deltaY * sensitivityFactor));
+		const newX = Math.max(
+			0,
+			Math.min(100, startPosX + deltaX * sensitivityFactor),
+		);
+		const newY = Math.max(
+			0,
+			Math.min(100, startPosY + deltaY * sensitivityFactor),
+		);
 
 		gridStore.updateImagePosition(image.id, [newX, newY]);
-	gridStore.markDirty();
+		gridStore.markDirty();
 	}
 
 	function handleMouseUp() {
 		isDragging = false;
-		window.removeEventListener('mousemove', handleMouseMove);
-		window.removeEventListener('mouseup', handleMouseUp);
+		window.removeEventListener("mousemove", handleMouseMove);
+		window.removeEventListener("mouseup", handleMouseUp);
 	}
 
 	function handleRotate(e: MouseEvent) {
 		e.preventDefault();
 		e.stopPropagation();
 		gridStore.rotateImage(image.id);
-	gridStore.markDirty();
+		gridStore.markDirty();
 	}
 
 	function handleRemove(e: MouseEvent) {
 		e.preventDefault();
 		e.stopPropagation();
 		gridStore.removeImage(image.id);
-	gridStore.markDirty();
+		gridStore.markDirty();
 	}
 
 	const settings = $derived($gridStore.settings);
@@ -69,15 +75,21 @@
 
 <div
 	class="card relative bg-white overflow-hidden group"
-	style="padding: {settings.cardPadding}mm;"
+	style="
+		padding: {settings.cardPadding}mm;
+		height: 100%;
+		box-sizing: border-box;
+	"
 >
-	<div class="relative w-full h-full overflow-hidden bg-gray-50">
+	<div class="relative w-full h-full overflow-hidden bg-gray-50" style="box-sizing: border-box;">
 		<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 		<!-- svelte-ignore a11y_img_redundant_alt -->
 		<img
 			src={image.url}
 			alt="Photo"
-			class="w-full h-full object-cover {isDragging ? 'cursor-grabbing' : 'cursor-grab'}"
+			class="w-full h-full object-cover {isDragging
+				? 'cursor-grabbing'
+				: 'cursor-grab'}"
 			style="
 				object-position: {image.objectPosition[0]}% {image.objectPosition[1]}%;
 				transform: rotate({image.rotation}deg);
@@ -110,17 +122,17 @@
 
 <style>
 	.card {
-		border: 1px solid #d1d5db;
+		outline: 1px solid #d1d5db;
+		outline-offset: -1px;
 		box-sizing: border-box;
 		-webkit-print-color-adjust: exact;
 		print-color-adjust: exact;
 		color-adjust: exact;
-		margin-right: -1px;
-		margin-bottom: -1px;
 	}
 
 	@media print {
 		.card {
+			outline-color: #f3f4f6 !important;
 			-webkit-print-color-adjust: exact !important;
 			print-color-adjust: exact !important;
 			color-adjust: exact !important;
@@ -130,6 +142,10 @@
 
 		.card > div {
 			background-color: white !important;
+		}
+
+		.card img {
+			border: none !important;
 		}
 	}
 </style>
