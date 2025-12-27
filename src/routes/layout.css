@@ -133,5 +133,15 @@
   body {
     margin: 0;
     padding: 0;
+    background: white;
+  }
+
+  * {
+    overflow: visible !important;
+  }
+
+  .grid-preview {
+    box-shadow: none !important;
+    margin: 0 !important;
   }
 }

@@ -30,7 +30,7 @@
 	);
 </script>
 
-<div bind:this={containerEl} class="w-full overflow-auto no-print">
+<div bind:this={containerEl} class="w-full overflow-auto preview-container">
 	<div
 		class="grid-preview bg-white shadow-lg mx-auto"
 		style="
@@ -45,7 +45,7 @@
 			style="padding: {settings.pageMargin}mm;"
 		>
 			<div
-				class="grid"
+				class="image-grid"
 				style="
 					display: grid;
 					grid-template-columns: repeat({columnsPerPage}, {settings.cardWidth}mm);
@@ -63,8 +63,13 @@
 
 <style>
 	@media print {
+		.preview-container {
+			overflow: visible !important;
+		}
+
 		.grid-preview {
 			transform: none !important;
+			box-shadow: none !important;
 		}
 	}
 </style>

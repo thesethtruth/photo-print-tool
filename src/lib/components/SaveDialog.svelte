@@ -67,6 +67,7 @@
 			const result = await response.json();
 			gridStore.setBatchId(result.id);
 			gridStore.setTitle(title.trim());
+			gridStore.clearDirty();
 
 			isOpen = false;
 			onSave?.();

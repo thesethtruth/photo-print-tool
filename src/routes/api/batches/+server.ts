@@ -43,6 +43,7 @@ export const POST: RequestHandler = async ({ request }) => {
 			id: batchId,
 			title: config.title || 'Untitled',
 			createdAt: new Date().toISOString(),
+			lastOpenedAt: new Date().toISOString(),
 			printed: false,
 			grid: config.grid,
 			images: images.map((img, index) => ({

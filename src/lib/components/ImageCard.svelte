@@ -41,6 +41,7 @@
 		const newY = Math.max(0, Math.min(100, startPosY + deltaY * sensitivityFactor));
 
 		gridStore.updateImagePosition(image.id, [newX, newY]);
+	gridStore.markDirty();
 	}
 
 	function handleMouseUp() {
@@ -53,12 +54,14 @@
 		e.preventDefault();
 		e.stopPropagation();
 		gridStore.rotateImage(image.id);
+	gridStore.markDirty();
 	}
 
 	function handleRemove(e: MouseEvent) {
 		e.preventDefault();
 		e.stopPropagation();
 		gridStore.removeImage(image.id);
+	gridStore.markDirty();
 	}
 
 	const settings = $derived($gridStore.settings);
@@ -68,7 +71,7 @@
 	class="card relative bg-white overflow-hidden group"
 	style="padding: {settings.cardPadding}mm;"
 >
-	<div class="relative w-full h-full overflow-hidden bg-gray-100">
+	<div class="relative w-full h-full overflow-hidden bg-gray-50">
 		<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 		<!-- svelte-ignore a11y_img_redundant_alt -->
 		<img
@@ -107,6 +110,26 @@
 
 <style>
 	.card {
-		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+		border: 1px solid #d1d5db;
+		box-sizing: border-box;
+		-webkit-print-color-adjust: exact;
+		print-color-adjust: exact;
+		color-adjust: exact;
+		margin-right: -1px;
+		margin-bottom: -1px;
+	}
+
+	@media print {
+		.card {
+			-webkit-print-color-adjust: exact !important;
+			print-color-adjust: exact !important;
+			color-adjust: exact !important;
+			break-inside: avoid;
+			page-break-inside: avoid;
+		}
+
+		.card > div {
+			background-color: white !important;
+		}
 	}
 </style>

@@ -5,6 +5,7 @@ export interface BatchIndexEntry {
 	id: string;
 	title: string;
 	createdAt: string;
+	lastOpenedAt: string;
 	printed: boolean;
 }
 
@@ -26,6 +27,7 @@ export interface BatchConfig {
 	id: string;
 	title: string;
 	createdAt: string;
+	lastOpenedAt: string;
 	printed: boolean;
 	grid: GridSettings;
 	images: ImageConfig[];
@@ -58,6 +60,7 @@ async function buildIndexFromDisk(): Promise<Map<string, BatchIndexEntry>> {
 					id: config.id,
 					title: config.title,
 					createdAt: config.createdAt,
+					lastOpenedAt: config.lastOpenedAt || config.createdAt,
 					printed: config.printed
 				});
 			} catch (err) {
@@ -107,6 +110,7 @@ export async function saveBatch(
 		id: config.id,
 		title: config.title,
 		createdAt: config.createdAt,
+		lastOpenedAt: config.lastOpenedAt,
 		printed: config.printed
 	});
 }
@@ -120,4 +124,44 @@ export function generateBatchId(): string {
 	const dateStr = now.toISOString().split('T')[0];
 	const randomStr = Math.random().toString(36).substring(2, 8);
 	return `${dateStr}-${randomStr}`;
+}
+
+export async function updateLastOpenedAt(id: string): Promise<void> {
+	const configPath = path.join(BATCHES_DIR, id, 'config.json');
+
+	try {
+		const configContent = await fs.readFile(configPath, 'utf-8');
+		const config: BatchConfig = JSON.parse(configContent);
+
+		config.lastOpenedAt = new Date().toISOString();
+
+		await fs.writeFile(configPath, JSON.stringify(config, null, 2));
+
+		// Update in-memory index
+		const indexEntry = index?.get(id);
+		if (indexEntry) {
+			indexEntry.lastOpenedAt = config.lastOpenedAt;
+		}
+
+		console.log(`Updated lastOpenedAt for batch ${id}`);
+	} catch (err) {
+		console.error(`Failed to update lastOpenedAt for batch ${id}:`, err);
+	}
+}
+
+export async function deleteBatch(id: string): Promise<void> {
+	const batchDir = path.join(BATCHES_DIR, id);
+
+	try {
+		// Remove batch directory and all its contents
+		await fs.rm(batchDir, { recursive: true, force: true });
+
+		// Remove from in-memory index
+		index?.delete(id);
+
+		console.log(`Deleted batch ${id}`);
+	} catch (err) {
+		console.error(`Failed to delete batch ${id}:`, err);
+		throw new Error(`Failed to delete batch: ${err}`);
+	}
 }

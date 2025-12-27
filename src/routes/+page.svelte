@@ -17,6 +17,8 @@
 
 	let showClearDialog = $state(false);
 	let showBatchesDialog = $state(false);
+	let showDeleteDialog = $state(false);
+	let batchToDelete = $state<string | null>(null);
 	let recentBatches = $state<BatchIndexEntry[]>([]);
 	let allBatches = $state<BatchIndexEntry[]>([]);
 
@@ -38,8 +40,8 @@
 				const batches = await response.json();
 				batches.sort(
 					(a: BatchIndexEntry, b: BatchIndexEntry) =>
-						new Date(b.createdAt).getTime() -
-						new Date(a.createdAt).getTime(),
+						new Date(b.lastOpenedAt).getTime() -
+						new Date(a.lastOpenedAt).getTime(),
 				);
 				allBatches = batches;
 				recentBatches = batches.slice(0, 3);
@@ -50,11 +52,17 @@
 	}
 
 	async function handleLoadBatch(id: string) {
+		if ($gridStore.isDirty) {
+			const confirmed = confirm('You have unsaved changes. Do you want to discard them and load this batch?');
+			if (!confirmed) return;
+		}
+
 		try {
 			const response = await fetch(`/api/batches/${id}`);
 			if (response.ok) {
 				const data = await response.json();
 				gridStore.loadBatch(data.config, data.images);
+				gridStore.clearDirty();
 				showBatchesDialog = false;
 			}
 		} catch (err) {
@@ -71,13 +79,51 @@
 		});
 	}
 
+	function handleDeleteClick(e: MouseEvent, id: string) {
+		e.stopPropagation();
+		batchToDelete = id;
+		showDeleteDialog = true;
+	}
+
+	async function handleDeleteConfirm() {
+		if (!batchToDelete) return;
+
+		try {
+			const response = await fetch(`/api/batches/${batchToDelete}`, {
+				method: 'DELETE'
+			});
+
+			if (response.ok) {
+				showDeleteDialog = false;
+				batchToDelete = null;
+				await loadBatches();
+			}
+		} catch (err) {
+			console.error('Failed to delete batch:', err);
+		}
+	}
+
 	onMount(() => {
 		loadBatches();
+
+		// Track unsaved changes
+		const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+			if ($gridStore.isDirty) {
+				e.preventDefault();
+				e.returnValue = '';
+			}
+		};
+
+		window.addEventListener('beforeunload', handleBeforeUnload);
+
+		return () => {
+			window.removeEventListener('beforeunload', handleBeforeUnload);
+		};
 	});
 </script>
 
-<div class="min-h-screen bg-gray-50">
-	<div class="container mx-auto p-6">
+<div class="min-h-screen bg-gray-50 print:bg-white print:min-h-0">
+	<div class="container mx-auto p-6 print:p-0 print:m-0 print:max-w-none">
 		<header
 			class="no-print flex items-center justify-between pb-6 mb-6 border-b"
 		>
@@ -100,8 +146,8 @@
 				</Button>
 			{/if}
 		</header>
-		<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-			<div class="lg:col-span-2 space-y-6">
+		<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 print:block print:gap-0">
+			<div class="lg:col-span-2 space-y-6 print:space-y-0">
 				{#if !hasImages}
 					<div class="no-print">
 						<DropZone />
@@ -114,7 +160,7 @@
 				{/if}
 			</div>
 
-			<div class="space-y-6">
+			<div class="space-y-6 no-print">
 				{#if hasImages}
 					<div class="no-print space-y-4">
 						<GridSettings />
@@ -218,36 +264,45 @@
 
 		<div class="max-h-[500px] overflow-y-auto space-y-2 pr-2">
 			{#each allBatches as batch (batch.id)}
-				{@const thumbnailUrl = `/api/batches/${batch.id}/images/001.jpg`}
-				<button
-					onclick={() => handleLoadBatch(batch.id)}
-					class="w-full text-left p-3 border rounded-lg hover:bg-accent hover:border-primary transition-colors flex gap-3 items-center"
-				>
-					<div
-						class="w-20 h-20 flex-shrink-0 bg-gray-100 rounded overflow-hidden flex items-center justify-center"
+				{@const thumbnailUrl = `/api/batches/${batch.id}/thumbnail`}
+				<div class="relative group">
+					<button
+						onclick={() => handleLoadBatch(batch.id)}
+						class="w-full text-left p-3 border rounded-lg hover:bg-accent hover:border-primary transition-colors flex gap-3 items-center"
 					>
-						<img
-							src={thumbnailUrl}
-							alt="Thumbnail"
-							class="w-full h-full object-cover"
-							onerror={(e) => {
-								e.currentTarget.style.display = "none";
-							}}
-						/>
-						<FolderOpen class="w-8 h-8 text-gray-400 absolute" />
-					</div>
-					<div class="flex-1">
-						<div class="font-medium">{batch.title}</div>
-						<div class="text-sm text-muted-foreground">
-							{formatDate(batch.createdAt)}
-							{#if batch.printed}
-								<span class="ml-2 text-xs text-primary"
-									>• Printed</span
-								>
-							{/if}
+						<div
+							class="w-20 h-20 flex-shrink-0 bg-gray-100 rounded overflow-hidden flex items-center justify-center"
+						>
+							<img
+								src={thumbnailUrl}
+								alt="Thumbnail"
+								class="w-full h-full object-cover"
+								onerror={(e) => {
+									e.currentTarget.style.display = "none";
+								}}
+							/>
+							<FolderOpen class="w-8 h-8 text-gray-400 absolute" />
 						</div>
-					</div>
-				</button>
+						<div class="flex-1">
+							<div class="font-medium">{batch.title}</div>
+							<div class="text-sm text-muted-foreground">
+								{formatDate(batch.createdAt)}
+								{#if batch.printed}
+									<span class="ml-2 text-xs text-primary"
+										>• Printed</span
+									>
+								{/if}
+							</div>
+						</div>
+					</button>
+					<button
+						type="button"
+						onclick={(e) => handleDeleteClick(e, batch.id)}
+						class="absolute top-3 right-3 w-8 h-8 rounded-md bg-destructive hover:bg-destructive/90 text-white flex items-center justify-center shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
+					>
+						<Trash2 class="w-4 h-4" />
+					</button>
+				</div>
 			{/each}
 		</div>
 
@@ -255,6 +310,28 @@
 			<Button
 				variant="outline"
 				onclick={() => (showBatchesDialog = false)}>Close</Button
+			>
+		</Dialog.Footer>
+	</Dialog.Content>
+</Dialog.Root>
+
+<Dialog.Root
+	open={showDeleteDialog}
+	onOpenChange={(open) => (showDeleteDialog = open)}
+>
+	<Dialog.Content class="no-print">
+		<Dialog.Header>
+			<Dialog.Title>Delete Batch</Dialog.Title>
+			<Dialog.Description>
+				Are you sure you want to delete this batch? This action cannot be undone.
+			</Dialog.Description>
+		</Dialog.Header>
+		<Dialog.Footer>
+			<Button variant="outline" onclick={() => (showDeleteDialog = false)}
+				>Cancel</Button
+			>
+			<Button variant="destructive" onclick={handleDeleteConfirm}
+				>Delete</Button
 			>
 		</Dialog.Footer>
 	</Dialog.Content>

@@ -25,6 +25,7 @@
 
 		if (files.length > 0) {
 			gridStore.addImages(files);
+		gridStore.markDirty();
 		}
 	}
 
@@ -34,6 +35,7 @@
 
 		if (files.length > 0) {
 			gridStore.addImages(files);
+		gridStore.markDirty();
 		}
 
 		target.value = '';
