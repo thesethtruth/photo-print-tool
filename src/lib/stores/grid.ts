@@ -34,8 +34,8 @@ const defaultSettings: GridSettings = {
 
 const defaultPresets: GridPreset[] = [
 	{
-		name: 'Default (90×60mm)',
-		settings: { cardWidth: 90, cardHeight: 60, cardPadding: 5, gap: 5, pageMargin: 10 }
+		name: 'Caso Vaso Instant (60x75mm)',
+		settings: { cardWidth: 60, cardHeight: 75, cardPadding: 5, gap: 0, pageMargin: 10 }
 	},
 	{
 		name: 'Polaroid Style (88×107mm)',

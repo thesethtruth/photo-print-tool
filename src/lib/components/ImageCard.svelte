@@ -74,14 +74,14 @@
 </script>
 
 <div
-	class="card relative bg-white overflow-hidden group"
+	class="card relative bg-white group"
 	style="
 		padding: {settings.cardPadding}mm;
 		height: 100%;
 		box-sizing: border-box;
 	"
 >
-	<div class="relative w-full h-full overflow-hidden bg-gray-50" style="box-sizing: border-box;">
+	<div class="relative w-full h-full overflow-hidden bg-gray-50" style="box-sizing: border-box; border-radius: inherit;">
 		<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 		<!-- svelte-ignore a11y_img_redundant_alt -->
 		<img
